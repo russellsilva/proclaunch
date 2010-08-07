@@ -9,7 +9,6 @@ use App::ProcLaunch::Util qw/
 /;
 
 use App::ProcLaunch::Profile;
-use Cwd qw/ abs_path cwd /;
 
 use Class::Struct
     pidfile      => '$',
@@ -43,10 +42,11 @@ sub run
     };
 
     while(1) {
-        for my $profile ( @profiles ) {
-            next if $profile->is_running();
-            next unless $profile->should_restart();
+        my @profiles_to_restart =
+            grep { !$_->is_running() && $_->should_restart() }
+            @profiles;
 
+        for my $profile ( @profiles_to_restart ) {
             $profile->run();
             die $profile->directory() . " did not create pid_file " . $profile->pid_file()
                 unless $profile->pid_file_exists();
